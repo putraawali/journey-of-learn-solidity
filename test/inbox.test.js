@@ -1,33 +1,25 @@
 const assert = require("assert");
-const { Web3 } = require("web3");
 const ganache = require("ganache"); // Local test network
-const compiledInbox = require("../compile.js");
-const byteCode = compiledInbox.evm.bytecode.object;
-const abi = compiledInbox.abi; // ABI (application binary interface)
-
+const { Web3 } = require("web3");
 const web3 = new Web3(ganache.provider());
 
-let account;
+const { abi, evm } = require("../compile");
+// const byteCode = compiledInbox.evm.bytecode.object;
+// const abi = compiledInbox.abi; // ABI (application binary interface)
+
+let accounts;
 let inbox;
 
 beforeEach(async () => {
     // Get list of all accounts
-    const accounts = await web3.eth.getAccounts();
-    account = accounts[0];
+    accounts = await web3.eth.getAccounts();
     // Deploy the contract
-    const contractDeployer = new web3.eth.Contract(abi).deploy({
-        data: "0x0" + byteCode,
-        arguments: ["Hi there!"],
-    });
-
-    inbox = await contractDeployer
-        .send({
-            from: account,
-            gas: "3000000",
+    inbox = await new web3.eth.Contract(abi)
+        .deploy({
+            data: evm.bytecode.object,
+            arguments: ["Hi there!"],
         })
-        .on("error", (err) => {
-            console.log(err, "<<<<");
-        });
+        .send({ from: accounts[0], gas: "1000000" });
 });
 
 describe("Verify contract", () => {
@@ -37,6 +29,12 @@ describe("Verify contract", () => {
 
     it("verify initial message", async () => {
         let message = await inbox.methods.message().call();
-        console.log(message);
+        assert.equal(message, "Hi there!");
+    });
+
+    it("verify setMessage method", async () => {
+        await inbox.methods.setMessage("Hi bro!").send({ from: accounts[0] });
+        let message = await inbox.methods.message().call();
+        assert.equal(message, "Hi bro!");
     });
 });
