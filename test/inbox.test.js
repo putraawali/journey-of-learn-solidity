@@ -4,8 +4,6 @@ const { Web3 } = require("web3");
 const web3 = new Web3(ganache.provider());
 
 const { abi, evm } = require("../compile");
-// const byteCode = compiledInbox.evm.bytecode.object;
-// const abi = compiledInbox.abi; // ABI (application binary interface)
 
 let accounts;
 let inbox;
